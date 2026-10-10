@@ -1,0 +1,23 @@
+.aircraft-stage{position:relative;height:100%;min-height:400px;overflow:hidden;background:#dce5ed;border-top:1px solid #9aabb72b;border-bottom:1px solid #9aabb72b}
+.aircraft-stage .scene-canvas{height:100%;width:100%;position:absolute;inset:0;touch-action:none}
+.aircraft-stage canvas{display:block;width:100%;height:100%;outline-offset:-4px}
+.assembly-labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.assembly-label{position:absolute;top:0;left:0;pointer-events:auto;padding:7px 10px;border:1px solid #a7b7c8b8;border-radius:4px;color:#37465a;background:#f7fbffe8;font:10px ui-monospace,SFMono-Regular,Consolas,monospace;box-shadow:0 2px 8px #2333450d;cursor:pointer;white-space:nowrap}
+.assembly-label::after{content:"";position:absolute;left:50%;bottom:-13px;height:12px;width:1px;background:#738da6}
+.assembly-label:hover,.assembly-label:focus-visible{border-color:#bb2242;color:#a71a37;background:white;z-index:2}
+.assembly-label.is-selected{border-left:3px solid #bd2241}
+.part-label{font-size:9px;max-width:215px;overflow:hidden;text-overflow:ellipsis}
+.part-label.is-selected{color:#9b1832;background:#fff8fa;border-color:#b82442;z-index:2}
+.model-part-count{position:absolute;top:69px;left:24px;font:9px ui-monospace,Consolas,monospace;color:#61758d;pointer-events:none}
+.assembly-label:disabled{cursor:default}
+.model-caption{position:absolute;top:22px;left:24px;display:flex;gap:10px;pointer-events:none;color:#182b45}
+.model-caption-rule{display:block;width:3px;background:#c51c40}
+.model-caption strong{display:block;font:600 12px system-ui;letter-spacing:.13em}
+.model-caption small{display:block;font:9px ui-monospace,Consolas,monospace;color:#61718a;margin-top:5px}
+.model-scale{position:absolute;right:24px;top:21px;display:flex;gap:8px;align-items:center;color:#718298;pointer-events:none}
+.model-scale strong{font:300 28px system-ui;color:#2d415a}.model-scale span{font:9px ui-monospace,Consolas,monospace;line-height:1.45}
+.model-hover{position:absolute;left:50%;bottom:38px;transform:translateX(-50%);padding:10px 17px;border-radius:5px;background:#10243eed;box-shadow:0 4px 15px #14273b25;color:#f1f6fa;pointer-events:none;max-width:90%;text-align:center}
+.model-hover strong{display:block;font:600 12px system-ui}.model-hover span{display:block;margin-top:4px;font:9px ui-monospace,Consolas,monospace;color:#b6c6d7}
+.model-footnote{position:absolute;left:24px;bottom:17px;color:#6e8097;font:8px ui-monospace,Consolas,monospace;letter-spacing:.10em;pointer-events:none}.model-footnote span{padding:0 7px}
+.model-failure{position:absolute;inset:0;background:#dce5edee;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:35px;text-align:center;color:#233b53;font:14px system-ui}.model-failure p{max-width:380px;line-height:1.6}.model-failure button{background:#182b45;border:0;border-radius:5px;padding:10px 14px;color:#fff;cursor:pointer}
+@media(max-width:700px){.aircraft-stage{min-height:390px}.model-caption{top:16px;left:16px}.model-caption strong{font-size:10px}.model-scale{top:15px;right:16px}.model-scale strong{font-size:22px}.assembly-label{font-size:8px;padding:5px 7px}.model-footnote{left:16px;font-size:7px;letter-spacing:.03em}}

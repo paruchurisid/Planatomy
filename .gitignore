@@ -10,3 +10,4 @@ build/
 *.egg-info/
 .neon
 node_modules/
+artifacts/viewer/

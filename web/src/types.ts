@@ -1,0 +1,2 @@
+export type Configuration = { id: string; family: string; variant: string; revision: number; status: string; attributes: Record<string, unknown>; unknown_attributes: string[]; as_of_date: string | null };
+export type ComponentOccurrence = { id: string; parent_occurrence_id: string | null; position_label: string | null; quantity: string | number | null; quantity_status: string; fidelity: string; canonical_name: string; description: string | null };

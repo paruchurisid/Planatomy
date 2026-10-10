@@ -11,8 +11,8 @@ The project takes its interaction inspiration from [Human Atlas](https://github.
 - Documentation baseline: September 14, 2026.
 - User-confirmed initial market: commercial passenger jets.
 - Working product name: Planatomy.
-- Proposed first aircraft: one representative Airbus A320ceo configuration, subject to the asset and data feasibility gate. This is a planning choice, not a user-selected subtype or a verified aircraft dataset.
-- Current deliverable: technical and product documentation only. No application code, dependency installation, infrastructure, data harvesting jobs, or new directories are included.
+- Current visual aircraft: an original Delta-inspired Airbus A320-200 study with 27 separable assemblies and 79 selectable subsystem parts, plus a generic A320ceo component catalog.
+- Current implementation: React/Three.js viewer, FastAPI, PostgreSQL schema, and seeded system descriptions. Part-number coverage and verified price evidence remain incomplete.
 - All numerical launch targets, schedules, operating budgets, and fictional price examples are planning assumptions unless explicitly identified otherwise.
 
 ## The basic idea
@@ -67,9 +67,17 @@ For the concept, read 01, 02, and 09. For implementation planning, read 04 throu
 
 ## Document precedence
 
-The confirmed passenger-jet scope and documentation-only constraint take precedence over planning defaults. For specific behavior, 04 governs configuration semantics, 08 governs matching, 09 governs pricing, and 13 governs access and rights. Performance and delivery figures are targets defined in 14–16, not measured results. Resolve future conflicting edits in 17 before implementation.
+The confirmed passenger-jet scope takes precedence over planning defaults. The original documentation-only phase has been superseded by the implementation requests. For specific behavior, 04 governs configuration semantics, 08 governs matching, 09 governs pricing, and 13 governs access and rights. Performance and delivery figures are targets defined in 14–16, not measured results.
 
 ## Implementation quickstart
+
+### Interactive aircraft (no database required)
+
+Run `npm install`, then `npm run dev` from the repository root and open `http://127.0.0.1:5173/`. The original Delta-inspired model opens exploded, with orbit/zoom, selectable assemblies, labels, and a separation slider. The local illustration catalog works without the API; compatible A320 catalog data is used when available. See [Original A320 model](ORIGINAL-A320-MODEL.md) for artwork, scope, and browser checks.
+
+Open a system's `+` control or search for a component to inspect the [subsystem anatomy](SUBSYSTEM-ANATOMY.md). Part selection isolates the system; Subsystem spread separates its internal components. Show aircraft returns to the full model.
+
+### API and catalog
 
 The first implementation uses PostgreSQL locally and keeps the connection contract compatible with Neon Lakebase Postgres. You do not need a Neon account to run the API locally.
 
@@ -90,4 +98,4 @@ npx neon@latest init --skip-template --no-config --yes --agent codex
 
 Neon CLI state is stored in the ignored `.neon` and `.env.local` files. Do not commit either file or copy its connection string into source code. Use `neon checkout <branch-name>` for isolated development branches once the first schema is stable.
 
-The current code is deliberately a foundation: it creates the core relational schema and exposes health checks. The aircraft seed catalog, source adapters, review UI, and 3D viewer will be added on top of this contract.
+The current viewer uses original procedural art, not downloaded engineering geometry. The seeded system hierarchy and core relational schema remain available; source adapters, serialized-aircraft configuration mapping, and reviewed part prices require further data work.
