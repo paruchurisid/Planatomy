@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { buildSubsystemParts } from "./subsystemGeometry";
+import { ADDITIONAL_SUBSYSTEMS } from "./subsystemExpansion";
 
 export type AircraftAssembly = {
   id: string;
@@ -13,7 +14,7 @@ export type AircraftAssembly = {
 };
 
 export const A320_DIMENSIONS = { length: 37.57, span: 34.1, diameter: 3.95 };
-export const DELTA_MODEL_VERSION = "Original study / 02 · subsystem anatomy";
+export const DELTA_MODEL_VERSION = "Original study / 05 · utility & safety systems";
 
 // Original, illustrative geometry. +X is the nose, +Y up, +Z the port wing.
 // Dimensions describe the classic wingtip-fence A320 envelope, not a serialised airframe.
@@ -143,14 +144,63 @@ export function createDeltaA320() {
   const nose = assembly("nose", "03 / Flight deck & radome", "Avionics", [5, 1.6, 0], [15.8, 0.8, 0], true);
   mesh(nose, skin(13, 18.785, -Math.PI / 2, Math.PI / 2), material(palette.white));
   mesh(nose, skin(13, 18.785, Math.PI / 2, Math.PI * 1.5), material(palette.navy));
-  [-1, 1].forEach(side => {
-    for (let i = 0; i < 3; i++) {
-      const x = 14.1 + i * .65;
-      const r = radiusAt(x) + .055;
-      const cockpitWindow = box(nose, [.58, .55 - i * .045, .05], [x, r * .56, side * r * .829], material(palette.dark, .4, .15));
-      cockpitWindow.rotation.set(side * -.59, side * .30, -.12);
-    }
-  });
+  // Six shaped glazing panels mapped to the nose surface. Subdivision keeps
+  // the pane and its layered seal above the curved skin without floating boxes.
+  const glazing = new THREE.MeshPhysicalMaterial({ color: 0x173748,
+    metalness: .32, roughness: .12, clearcoat: 1, clearcoatRoughness: .06,
+    side: THREE.DoubleSide });
+  const seal = material(0x101923, .1, .64);
+  const frame = material(0x9baab6, .65, .28);
+  const glint = material(0x82afc1, .45, .18);
+  const panes = [
+    [[16.85, .16], [15.72, .38], [15.65, .98], [16.68, .84]],
+    [[15.57, .40], [14.56, .65], [14.48, 1.17], [15.51, 1.02]],
+    [[14.43, .67], [13.70, .82], [13.66, 1.18], [14.35, 1.19]],
+  ];
+  function glazingPoint(x: number, angle: number, side: number, lift: number) {
+    const radius = radiusAt(x) + lift;
+    return [x, radius * Math.cos(angle), side * radius * Math.sin(angle)];
+  }
+  for (const side of [-1, 1]) {
+    panes.forEach((corners, paneIndex) => {
+      const vertices: number[] = [], indices: number[] = [];
+      const divisions = 12;
+      for (let row = 0; row <= divisions; row++) {
+        const v = row / divisions;
+        const left = corners[0].map((n, i) => THREE.MathUtils.lerp(n, corners[3][i], v));
+        const right = corners[1].map((n, i) => THREE.MathUtils.lerp(n, corners[2][i], v));
+        for (let col = 0; col <= divisions; col++) {
+          const u = col / divisions;
+          vertices.push(...glazingPoint(THREE.MathUtils.lerp(left[0], right[0], u),
+            THREE.MathUtils.lerp(left[1], right[1], u), side, .028));
+          if (row < divisions && col < divisions) {
+            const n = row * (divisions + 1) + col;
+            indices.push(n, n + 1, n + divisions + 1, n + 1, n + divisions + 2, n + divisions + 1);
+          }
+        }
+      }
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+      geometry.setIndex(indices); geometry.computeVertexNormals();
+      const pane = mesh(nose, geometry, glazing);
+      pane.name = `${side > 0 ? "Port" : "Starboard"} cockpit pane ${paneIndex + 1}`;
+      for (let edge = 0; edge < 4; edge++) {
+        const a = corners[edge], b = corners[(edge + 1) % 4];
+        const path = Array.from({ length: 13 }, (_, i) => glazingPoint(
+          THREE.MathUtils.lerp(a[0], b[0], i / 12), THREE.MathUtils.lerp(a[1], b[1], i / 12), side, .036));
+        tube(nose, path, .035, seal);
+        tube(nose, path.map(p => [p[0], p[1] + .013, p[2] + side * .009]), .012, frame);
+      }
+      // A narrow reflected sky streak gives glazing a readable specular edge.
+      const a = corners[0], b = corners[1];
+      tube(nose, Array.from({ length: 10 }, (_, i) => glazingPoint(
+        THREE.MathUtils.lerp(a[0], b[0], .13 + i * .075),
+        THREE.MathUtils.lerp(a[1], b[1], .13 + i * .075) + .065, side, .039)), .009, glint);
+    });
+    const arm = [[16.25, 1.05], [16.48, .84], [16.04, .67]].map(([x, angle]) => glazingPoint(x, angle, side, .09));
+    tube(nose, arm, .021, seal);
+    tube(nose, [[15.91, .52], [16.04, .67], [16.17, .82]].map(([x, angle]) => glazingPoint(x, angle, side, .10)), .026, seal);
+  }
   const aft = assembly("tail-cone", "04 / Aft fuselage & APU", "Primary structure", [-4.5, 0.3, 0], [-16, 0, 0]);
   mesh(aft, skin(-18.785, -12.4, -Math.PI / 2, Math.PI / 2), material(palette.white));
   mesh(aft, skin(-18.785, -12.4, Math.PI / 2, Math.PI * 1.5), material(palette.navy));
@@ -314,6 +364,16 @@ export function createDeltaA320() {
     box(air,[2.4,.52,.67],[-6.5,-1,side*.6],material(palette.teal,.45));
     tube(air,[[-9,-.8,side*.7],[-7,-1,side*.7],[-5,-.9,side*.7],[-3,-.8,side*1.1]],.13,material(0x78a6b4,.5));
   });
+  // Dedicated study groups keep remote equipment attached to its aircraft station.
+  assembly("apu", "14 / Auxiliary power unit", "Propulsion", [-6.2, -1.7, 0], [-16.3, 0, 0], true);
+  assembly("cockpit-equipment", "15 / Flight-deck equipment", "Avionics", [5, 3.5, 0], [14.4, .5, 0]);
+  assembly("cargo-equipment", "16 / Cargo & fire protection", "Cabin systems", [0, -3.2, -3], [-3, -.9, 0]);
+  assembly("tail-controls", "17 / Tail control drives", "Flight controls", [-5, 2.1, 2.5], [-14.8, 1, 0]);
+  assembly("service-bay", "18 / Ground service connections", "Air and environmental", [2, -3, 3], [7, -1.2, 0]);
+  assembly("external-antennas", "19 / Radio antennas", "Avionics", [0, 7.2, 0], [5, 2.2, 0]);
+  for (const subsystem of ADDITIONAL_SUBSYSTEMS) {
+    assembly(subsystem.id, subsystem.label, subsystem.system, subsystem.offset, subsystem.origin);
+  }
   const parts = buildSubsystemParts(assemblies);
   for (const item of assemblies) {
     const materials=new Set<THREE.MeshStandardMaterial>();

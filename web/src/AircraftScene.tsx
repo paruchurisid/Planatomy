@@ -297,6 +297,10 @@ export default function AircraftScene(props: Props) {
       const placed: { x: number; y: number; w: number }[] = [];
       const orderedLabels = [...labelNodes].sort((a,b) => Number(b.part?.definition.id === state.selectedPartId) - Number(a.part?.definition.id === state.selectedPartId));
       orderedLabels.forEach(({ assembly, part, button, width: labelWidth }) => {
+        // Hidden and offscreen labels must also relinquish the previous selection.
+        const selected = part ? part.definition.id === state.selectedPartId : !state.selectedPartId && occurrenceFor(assembly)?.id === state.selected?.id;
+        button.classList.toggle("is-selected", selected);
+        button.setAttribute("aria-pressed", String(selected));
         const eligible = part ? !!isolated && systemMatches(part.definition.system, isolated) : !isolated && state.mode === "exploded" && amount > .12;
         if (!eligible || state.labels === false) { button.style.display = "none"; return; }
         if (part) {
@@ -312,9 +316,6 @@ export default function AircraftScene(props: Props) {
         button.style.display = visible ? "block" : "none";
         if (visible) {
           button.style.transform = "translate(" + x + "px, " + y + "px) translate(-50%, -100%)";
-          const selected = part ? part.definition.id === state.selectedPartId : !state.selectedPartId && occurrenceFor(assembly)?.id === state.selected?.id;
-          button.classList.toggle("is-selected", selected);
-          button.setAttribute("aria-pressed", String(selected));
           button.disabled = part ? !state.onSelectPart : !occurrenceFor(assembly);
           placed.push({ x, y, w: labelWidth });
         }

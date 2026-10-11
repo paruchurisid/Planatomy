@@ -233,7 +233,153 @@ export function buildSubsystemParts(assemblies: AircraftAssembly[]): AircraftPar
     }
 
     const id = definition.id;
-    if (id.startsWith("compressor-")) rotor(4, .37, .67);
+    if (definition.geometry) {
+      switch (definition.geometry) {
+        case "ram-turbine":
+          cylinder(.105, .38, [0, 0, 0], "body");
+          cylinder(.03, .18, [.27, 0, 0], "metal", "x", .10);
+          for (const side of [-1, 1]) {
+            const blade = box([.055, .48, .12], [.08, side * .29, 0], "metal");
+            blade.rotation.y = side * .24;
+          }
+          rod([-.1, -.05, 0], [-.25, -.57, 0], .055);
+          cylinder(.10, .23, [-.25, -.58, 0], "body", "z");
+          box([.3, .07, .33], [-.25, -.69, 0], "metal");
+          break;
+        case "latch":
+          box([.48, .065, .35], [0, -.15, 0], "metal");
+          cylinder(.055, .39, [-.12, 0, 0], "gold", "z");
+          box([.32, .075, .09], [.02, .02, 0], "body");
+          box([.065, .21, .09], [.15, .08, 0], "body");
+          box([.19, .06, .09], [.08, .17, 0], "body");
+          cylinder(.035, .32, [.025, .105, 0], "metal", "z");
+          for (const x of [-.18, .18]) for (const z of [-.12, .12]) cylinder(.019, .09, [x, -.12, z], "gold", "y");
+          break;
+        case "manifold":
+          box([.64, .18, .24], [0, 0, 0], "metal");
+          for (const x of [-.23, 0, .23]) {
+            cylinder(.052, .14, [x, .15, 0], "gold", "y");
+            ring(.054, .012, [x, .225, 0], "dark", "y");
+          }
+          port([-.38, 0, 0]); port([.38, 0, 0]);
+          feet(.46, .22);
+          break;
+        case "probe":
+          box([.3, .045, .24], [-.15, -.16, 0], "metal");
+          rod([-.15, -.13, 0], [0, .07, 0], .045);
+          cylinder(.035, .48, [.18, .07, 0], "metal");
+          ring(.035, .009, [.425, .07, 0], "dark");
+          for (const z of [-.08, .08]) cylinder(.014, .035, [-.23, -.125, z], "gold", "y");
+          port([-.15, -.22, 0], "y", .025);
+          break;
+        case "slide-pack":
+          box([.68, .39, .46], [0, 0, 0], "white");
+          box([.63, .025, .41], [0, .21, 0], "body");
+          for (const x of [-.21, .21]) {
+            box([.055, .43, .49], [x, 0, 0], "dark");
+            box([.08, .10, .025], [x, 0, .26], "gold");
+          }
+          box([.2, .13, .012], [0, .02, .239], "body");
+          rod([-.08, .26, 0], [.08, .26, 0], .018);
+          break;
+        case "seat":
+          box([.55, .10, .48], [0, 0, 0], "dark");
+          box([.10, .62, .48], [-.25, .30, 0], "body");
+          box([.13, .20, .30], [-.25, .71, 0], "dark");
+          for (const z of [-.29, .29]) {
+            rod([-.22, -.32, z], [.24, -.32, z], .035);
+            rod([-.16, -.3, z], [-.16, -.04, z], .03);
+            box([.43, .055, .07], [0, .22, z], "dark");
+            rod([-.15, 0, z], [-.15, .22, z], .02);
+          }
+          for (const z of [-.1, .1]) box([.015, .46, .035], [-.188, .3, z], "gold");
+          break;
+        case "console":
+          box([.7, .18, .45], [0, 0, 0], "dark");
+          box([.65, .02, .40], [0, .105, 0], "body");
+          for (let i = 0; i < 5; i++) for (const z of [-.13, 0, .13]) {
+            cylinder(.018, .045, [-.25 + i * .125, .14, z], "metal", "y");
+            box([.035, .008, .015], [-.25 + i * .125, .119, z + .04], "light");
+          }
+          break;
+        case "antenna":
+          box([.42, .035, .17], [0, -.08, 0], "metal");
+          mesh(new THREE.ConeGeometry(.11, .48, 4), mat("white"), [0, .16, 0]);
+          port([0, -.15, 0], "y", .025);
+          break;
+        case "hatch":
+          box([.72, .065, .57], [0, 0, 0], "white");
+          box([.66, .075, .51], [0, -.015, 0], "metal");
+          box([.19, .024, .07], [.1, .05, 0], "dark");
+          for (const x of [-.3, .3]) for (const z of [-.22, .22]) cylinder(.016, .02, [x, .045, z], "dark", "y");
+          for (const z of [-.18, .18]) cylinder(.03, .13, [-.37, 0, z], "gold", "z");
+          break;
+        case "turbomachine":
+          rotor(3, .24, .45);
+          cylinder(.18, .35, [-.45, 0, 0], "body");
+          ring(.25, .035, [.27, 0, 0]);
+          port([-.45, .22, 0], "y", .07); feet(.65, .38);
+          break;
+        case "harness":
+          for (let i = 0; i < 5; i++) {
+            const z = (i - 2) * .026;
+            rod([-.48, 0, z], [.25, 0, z], .012, i % 2 ? "gold" : "dark");
+            rod([.25, 0, z], [.45, .19, z], .012, i % 2 ? "gold" : "dark");
+          }
+          for (const x of [-.3, 0, .23]) box([.035, .055, .16], [x, 0, 0], "metal");
+          box([.1, .09, .18], [-.48, 0, 0]); box([.1, .09, .18], [.45, .19, 0]);
+          break;
+        case "rib":
+          box([1.1, .20, .045], [0, 0, 0], "body");
+          for (const y of [-.12, .12]) box([1.15, .035, .16], [0, y, 0], "metal");
+          for (const x of [-.45, -.15, .15, .45]) {
+            box([.035, .2, .09], [x, 0, 0], "metal");
+            cylinder(.016, .065, [x, .11, .05], "gold", "z");
+          }
+          break;
+        case "pedals":
+          rod([0, -.1, -.28], [0, -.1, .28], .035);
+          for (const z of [-.2, .2]) {
+            rod([0, -.1, z], [.14, .1, z], .025);
+            box([.08, .2, .15], [.14, .14, z], "dark");
+            for (const y of [.08, .14, .2]) box([.015, .012, .13], [.19, y, z], "metal");
+          }
+          break;
+        case "pump": pump(); break;
+        case "valve": valve(); break;
+        case "vessel": vessel(); break;
+        case "electronics": electronics(); break;
+        case "actuator": actuator(); break;
+        case "gearbox": gearbox(); break;
+        case "radiator": radiator(); break;
+        case "duct":
+          rod([-.4, 0, 0], [.2, 0, 0], .12, "body");
+          rod([.2, 0, 0], [.2, .35, 0], .12, "body");
+          ring(.13, .022, [-.4, 0, 0]); ring(.13, .022, [.2, .35, 0], "metal", "y");
+          for (const x of [-.25, -.1, .05]) ring(.125, .015, [x, 0, 0]);
+          break;
+        case "sensor":
+          cylinder(.075, .25, [0, 0, 0], "body");
+          cylinder(.035, .25, [.22, 0, 0], "metal");
+          cylinder(.115, .045, [.09, 0, 0], "gold");
+          port([-.18, 0, 0]); box([.2, .055, .22], [0, -.09, 0], "metal");
+          break;
+        case "display":
+          box([.18, .43, .48], [0, 0, 0], "dark");
+          box([.02, .34, .39], [-.105, 0, 0], "body");
+          box([.022, .15, .35], [-.12, .08, 0], "light");
+          box([.024, .13, .35], [-.12, -.07, 0], "gold");
+          box([.027, .008, .29], [-.135, 0, 0], "white");
+          for (const z of [-.18, -.06, .06, .18]) cylinder(.018, .025, [-.12, -.19, z], "metal");
+          break;
+        case "frame":
+          box([.045, .19, 3.1], [0, 0, 0]);
+          for (const y of [-.11, .11]) box([.18, .035, 3.1], [0, y, 0], "metal");
+          for (const z of [-1.35, -.9, -.45, 0, .45, .9, 1.35]) box([.08, .19, .028], [0, 0, z], "metal");
+          break;
+      }
+    }
+    else if (id.startsWith("compressor-")) rotor(4, .37, .67);
     else if (id.startsWith("turbine-")) rotor(3, .31, .48);
     else if (id.startsWith("combustor-")) {
       cylinder(.35, .52, [0, 0, 0], "body");

@@ -23,10 +23,28 @@ try {
   const audit = await page.evaluate(async () => {
     const { createDeltaA320 } = await import("/web/src/deltaA320.ts");
     const { SUBSYSTEM_PARTS } = await import("/web/src/subsystemParts.ts");
+    const { ADDITIONAL_SUBSYSTEMS } = await import("/web/src/subsystemExpansion.ts");
     const { LOCAL_COMPONENTS } = await import("/web/src/aircraftCatalog.ts");
     const model = createDeltaA320();
     const issues = [], ids = new Set(), materials = new Set();
+    const panes = [];
+    model.root.traverse(object => {
+      if (/cockpit pane/.test(object.name)) panes.push(object);
+    });
+    if (panes.length !== 6) issues.push("Expected six cockpit glazing panes");
+    for (const pane of panes) {
+      if (!pane.material.isMeshPhysicalMaterial || pane.material.clearcoat !== 1) issues.push("Missing layered glazing finish");
+      if (pane.geometry.attributes.position.count < 100) issues.push("Glazing is not fitted to nose curvature");
+    }
     const systems = {};
+    for (const subsystem of ADDITIONAL_SUBSYSTEMS) {
+      const children = model.parts.filter(part => part.definition.assemblyId === subsystem.id);
+      if (children.length !== subsystem.items.length) issues.push("Incomplete subsystem: " + subsystem.id);
+      if (!model.assemblies.some(assembly => assembly.id === subsystem.id && assembly.system === subsystem.system)) issues.push("Missing subsystem: " + subsystem.id);
+    }
+    for (const assemblyId of ["apu", "cockpit-equipment", "cargo-equipment", "tail-controls", "service-bay", "external-antennas"]) {
+      if (!model.parts.some(part => part.definition.assemblyId === assemblyId)) issues.push("Empty new assembly: " + assemblyId);
+    }
     model.parts.forEach(part => {
       const { definition, group } = part;
       if (ids.has(definition.id)) issues.push("Duplicate part: " + definition.id);
@@ -54,11 +72,13 @@ try {
   });
   assert.deepEqual(audit.issues, []);
   assert.equal(audit.total, audit.definitions);
-  assert.ok(audit.total >= 60);
+  assert.ok(audit.total >= 367);
   assert.equal(await page.locator("canvas").count(), 1);
   await page.screenshot({ path: path.join(output, "subsystems-overview.png"), fullPage: true });
 
   const search = page.getByRole("textbox", { name: "Search aircraft systems and parts" });
+  await search.fill("Door & evacuation equipment");
+  assert.equal(await page.locator(".part-row").count(), 8, "Subsystem name finds all its parts");
   await search.fill("Green hydraulic reservoir");
   assert.equal(await page.locator(".system-row").count(), 1, "Searching a part retains its system parent");
   await page.locator(".part-row").filter({ hasText: "Green hydraulic reservoir" }).click();
@@ -121,6 +141,27 @@ try {
   await page.waitForTimeout(1200);
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await page.screenshot({ path: path.join(output, "subsystems-mobile.png"), fullPage: true });
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  for (const [name, id] of [["APU rotating core", "apu-module-1"], ["Captain seat", "deck-hardware-1"],
+    ["Cargo service access panel", "cargo-protection-10"], ["Rudder servo actuator A", "tail-drive-1"],
+    ["Ground pneumatic connector", "ground-services-1"], ["VHF blade antenna", "radio-equipment-1"],
+    ["Ram-air turbine rotor", "emergency-power-ram-air-turbine"],
+    ["Brake and anti-skid controller", "brake-control-brake-controller"],
+    ["Port pitot probe", "air-data-pitot-left"],
+    ["Evacuation slide container", "door-evacuation-slide-pack"],
+    ["Oxygen distribution block", "oxygen-distribution-distribution-block"],
+    ["Fuel crossfeed control valve", "center-fuel-crossfeed"],
+    ["Fire detection control unit", "fire-detection-fire-controller"],
+    ["Cabin positive-pressure relief valve", "pressure-safety-relief-valve"]]) {
+    await search.fill(name);
+    await page.locator(".part-row").filter({ hasText: name }).click();
+    await page.waitForTimeout(1000);
+    assert.equal(await page.locator(".detail-title-row h2").textContent(), name);
+    assert.equal(await page.locator(".part-label.is-selected").getAttribute("data-part-id"), id);
+    if (["deck-hardware-1", "apu-module-1", "emergency-power-ram-air-turbine", "door-evacuation-slide-pack"].includes(id)) {
+      await page.screenshot({ path: path.join(output, `${id}.png`), fullPage: true });
+    }
+  }
   assert.deepEqual(errors, []);
   console.log(JSON.stringify({ result: "passed", ...audit, checks: ["geometry coverage", "part search and selection", "isolated focus", "direct picking", "subsystem animation", "parent and sibling navigation", "live catalog identity", "mobile"], artifacts: output }));
 } finally { await browser.close(); }

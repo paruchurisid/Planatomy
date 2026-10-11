@@ -1,10 +1,14 @@
+import { ADDITIONAL_PARTS } from "./subsystemExpansion";
+
 export type SubsystemPartDefinition = {
   id: string;
   name: string;
   system: string;
   assemblyId: string;
+  assemblyName?: string;
   description: string;
   ata: string;
+  geometry?: "pump" | "valve" | "vessel" | "electronics" | "actuator" | "gearbox" | "radiator" | "duct" | "sensor" | "display" | "frame" | "seat" | "console" | "antenna" | "hatch" | "turbomachine" | "harness" | "rib" | "pedals" | "ram-turbine" | "latch" | "manifold" | "probe" | "slide-pack";
   position: [number, number, number];
   offset: [number, number, number];
 };
@@ -100,3 +104,245 @@ part("structure-crown-stringer", "Representative crown stringer", "Primary struc
 part("structure-wing-spar-port", "Port wing spar segment", "Primary structure", "wing-port", "57", [-1.60, -.38, 6.2], [0, 1.2, 1], "An I-section spar segment illustrates a principal wing load path. Only a local segment is modeled; it is not a structural sizing model.");
 part("structure-wing-spar-starboard", "Starboard wing spar segment", "Primary structure", "wing-starboard", "57", [-1.60, -.38, -6.2], [0, 1.2, -1], "The mirrored representative spar segment exposes a web and upper/lower caps inside the wing.");
 part("structure-tail-actuator-fitting", "Tail attachment fitting", "Primary structure", "empennage", "55", [-14.35, 1.35, 0], [.9, .8, .7], "A machined lug and bolted plate illustrate an attachment at the tail structure. Its shape and location are conceptual.");
+
+// Revision 03: additional functional modules. Each entry owns its selection,
+// geometry and spread transform; repeated stations are explicit illustrated units.
+type Detail = [string, NonNullable<SubsystemPartDefinition["geometry"]>, string, string];
+function modules(prefix: string, system: string, assemblyId: string, origin: [number, number, number], details: Detail[], side = 1) {
+  details.forEach(([name, geometry, ata, description], index) => {
+    const column = index % 4, row = Math.floor(index / 4);
+    SUBSYSTEM_PARTS.push({
+      id: `${prefix}-${index + 1}`, name, system, assemblyId, geometry, ata,
+      position: [origin[0] - column * .82, origin[1] + row * .48, origin[2]],
+      offset: [(1.5 - column) * .75, .8 + row * .8, side * (1 + row * .55)],
+      description: `${description} Original functional illustration; installation position and quantity are representative.`,
+    });
+  });
+}
+for (const side of [-1, 1]) {
+  const suffix = side > 0 ? "port" : "starboard", label = side > 0 ? "Port" : "Starboard";
+  const mirrored = (items: Detail[]): Detail[] => items.map(([name, ...rest]) => [`${label} ${name}`, ...rest]);
+  modules(`engine-detail-${suffix}`, "Propulsion", `core-${suffix}`, [3.8, -1.1, side * 5.4], mirrored([
+    ["fuel metering unit", "valve", "73", "Meters fuel delivered to the combustion system."],
+    ["engine fuel pump", "pump", "73", "Raises fuel pressure for the engine fuel circuit."],
+    ["oil scavenge pump", "pump", "79", "Returns oil from bearing sumps to the lubrication circuit."],
+    ["fuel-oil heat exchanger", "radiator", "79", "Transfers heat between oil and fuel streams."],
+    ["engine control unit", "electronics", "73", "Processes engine control inputs and commands."],
+    ["ignition exciter", "electronics", "74", "Supplies ignition energy during starting and relight."],
+    ["bleed regulation valve", "valve", "36", "Regulates a compressed-air extraction path."],
+    ["vibration sensor", "sensor", "77", "Measures vibration for engine monitoring."],
+    ["oil pressure transmitter", "sensor", "79", "Converts oil pressure into an indication signal."],
+    ["reverser actuator", "actuator", "78", "Illustrates the drive that moves thrust-reverser hardware."],
+    ["fire extinguishing bottle", "vessel", "26", "Stores extinguishing agent for an engine fire zone."],
+    ["starter air duct", "duct", "80", "Routes compressed air toward the starter."],
+  ]), side);
+  modules(`control-detail-${suffix}`, "Flight controls", `controls-${suffix}`, [-3, .12, side * 7.6], mirrored([
+    ["spoiler servo actuator", "actuator", "27", "Moves a spoiler panel under hydraulic control."],
+    ["slat drive gearbox", "gearbox", "27", "Transfers rotary drive to a leading-edge device."],
+    ["slat position sensor", "sensor", "27", "Reports leading-edge device position."],
+    ["flap position sensor", "sensor", "27", "Reports trailing-edge flap position."],
+    ["flap hydraulic motor", "pump", "27", "Converts hydraulic pressure into rotary drive."],
+    ["wing-tip brake module", "gearbox", "27", "Illustrates a device that arrests unwanted high-lift transmission motion."],
+  ]), side);
+  modules(`fuel-detail-${suffix}`, "Fuel system", `fuel-${suffix}`, [1.2, -.25, side * 5.5], mirrored([
+    ["standby boost pump", "pump", "28", "Illustrates a redundant tank pumping path."],
+    ["refuel shutoff valve", "valve", "28", "Controls fuel admission during refueling."],
+    ["tank vent duct", "duct", "28", "Provides a ventilation path for the tank volume."],
+    ["fuel temperature sensor", "sensor", "28", "Measures fuel temperature."],
+    ["feed pressure switch", "sensor", "28", "Detects pressure in a fuel supply path."],
+    ["transfer valve", "valve", "28", "Controls a representative fuel transfer path."],
+  ]), side);
+  modules(`gear-detail-${suffix}`, "Main landing gear assembly", `main-gear-${suffix}`, [-.5, -1.9, side * 2.6], mirrored([
+    ["uplock mechanism", "gearbox", "32", "Retains the retracted gear through a locking mechanism."],
+    ["downlock actuator", "actuator", "32", "Illustrates the actuator associated with gear locking."],
+    ["brake servo valve", "valve", "32", "Modulates hydraulic pressure delivered to the brakes."],
+    ["wheel speed transducer", "sensor", "32", "Provides wheel rotation information for braking control."],
+    ["gear proximity sensor", "sensor", "32", "Detects a target associated with gear position."],
+  ]), side);
+}
+modules("flight-deck", "Avionics", "nose", [15.6, .32, -.65], [
+  ["Captain primary flight display", "display", "31", "Presents primary attitude and flight information."],
+  ["Captain navigation display", "display", "34", "Presents navigation and route information."],
+  ["First officer primary flight display", "display", "31", "Presents primary flight information at the second crew station."],
+  ["First officer navigation display", "display", "34", "Presents navigation information at the second crew station."],
+  ["Engine warning display", "display", "31", "Groups engine indications and warning information."],
+  ["System status display", "display", "31", "Presents system diagrams and status information."],
+  ["Flight management interface", "electronics", "22", "Provides a crew interface to flight management functions."],
+  ["Flight guidance control panel", "electronics", "22", "Illustrates controls for selected flight guidance targets."],
+  ["Weather radar antenna drive", "gearbox", "34", "Positions the nose weather-radar antenna."],
+  ["Standby flight instrument", "display", "31", "Illustrates an independent backup flight indication."],
+  ["Window heat controller", "electronics", "30", "Controls electrical heating of flight-deck glazing."],
+  ["Wiper drive motor", "pump", "30", "Drives the windshield wiper linkage."],
+]);
+modules("power-detail", "Electrical power", "electrical", [7.8, -.6, 0], [
+  ["AC distribution unit", "electronics", "24", "Distributes alternating-current power."],
+  ["DC distribution unit", "electronics", "24", "Distributes direct-current power."],
+  ["Generator control unit", "electronics", "24", "Monitors and controls a generator supply."],
+  ["External power contactor", "electronics", "24", "Switches the external ground-power connection."],
+  ["Emergency power control unit", "electronics", "24", "Illustrates emergency electrical supply control."],
+  ["Battery charge limiter", "electronics", "24", "Controls a battery charging path."],
+]);
+for (const [i, circuit] of ["green", "blue", "yellow"].entries()) modules(`hydraulic-detail-${circuit}`, "Hydraulics", "hydraulics", [1.4, -.6, (i - 1) * .65], [
+  [`${circuit} pressure filter`, "vessel", "29", "Traps contamination in the hydraulic pressure path."],
+  [`${circuit} relief valve`, "valve", "29", "Limits excessive hydraulic pressure."],
+  [`${circuit} pressure transmitter`, "sensor", "29", "Reports hydraulic circuit pressure."],
+  [`${circuit} priority valve`, "valve", "29", "Illustrates pressure-dependent allocation of hydraulic supply."],
+], i === 0 ? -1 : 1);
+modules("environment-detail", "Air and environmental", "air", [-4.8, -.45, 0], [
+  ["Pack flow control valve", "valve", "21", "Regulates supply airflow into a conditioning pack."],
+  ["Bleed air precooler", "radiator", "36", "Cools extracted compressed air."],
+  ["Cabin outflow valve", "valve", "21", "Meters cabin exhaust airflow for pressure control."],
+  ["Cabin pressure controller", "electronics", "21", "Commands cabin pressure regulation."],
+  ["Duct temperature sensor", "sensor", "21", "Measures temperature in a conditioned-air duct."],
+  ["Zone distribution duct", "duct", "21", "Routes supply air toward a cabin zone."],
+  ["Pack bypass valve", "valve", "21", "Modulates a representative bypass airflow path."],
+  ["Ozone converter", "vessel", "21", "Illustrates a treatment vessel in an air supply path."],
+]);
+modules("cabin-detail", "Cabin systems", "cabin", [-7, .6, 0], [
+  ["Potable water reservoir", "vessel", "38", "Stores water for cabin services."],
+  ["Water isolation valve", "valve", "38", "Isolates a water-service branch."],
+  ["Lavatory vacuum generator", "pump", "38", "Illustrates vacuum generation for waste transport."],
+  ["Waste collection vessel", "vessel", "38", "Collects waste from cabin services."],
+  ["Emergency lighting battery", "electronics", "33", "Stores energy for emergency lighting."],
+  ["Cabin announcement amplifier", "electronics", "23", "Amplifies passenger announcement audio."],
+  ["Smoke detector", "sensor", "26", "Detects smoke in a monitored cabin-service space."],
+  ["Crew oxygen cylinder", "vessel", "35", "Illustrates stored oxygen for a crew supply system."],
+]);
+modules("nose-gear-detail", "Landing gear", "nose-gear", [14, -1.55, -.3], [
+  ["Nose gear uplock", "gearbox", "32", "Retains the nose gear in its retracted position."],
+  ["Nose gear position sensor", "sensor", "32", "Reports a gear-position target."],
+  ["Steering control valve", "valve", "32", "Meters steering hydraulic flow."],
+  ["Nose door actuator", "actuator", "32", "Illustrates hydraulic movement of a gear door."],
+]);
+for (let station = 0; station < 12; station++) {
+  modules(`structure-station-${station}`, "Primary structure", "airframe", [10 - station * 1.75, -.35, 0], [
+    [`Floor beam station ${station + 1}`, "frame", "53", "Transfers floor loads across a fuselage station."],
+  ], station % 2 ? -1 : 1);
+}
+
+// Revision 04: remote equipment gets dedicated assemblies rather than being
+// collected in a central bay. Coordinates remain authored study positions.
+modules("apu-module", "Propulsion", "apu", [-15.1, -.1, 0], [
+  ["APU rotating core", "turbomachine", "49", "A small gas turbine provides auxiliary shaft power."],
+  ["APU load compressor", "turbomachine", "49", "Illustrates the compressed-air source for auxiliary pneumatic supply."],
+  ["APU accessory gearbox", "gearbox", "49", "Transfers shaft power to auxiliary accessories."],
+  ["APU generator", "pump", "49", "Illustrates a rotating electrical generator driven by the auxiliary unit."],
+  ["APU electronic controller", "electronics", "49", "Supervises auxiliary-unit operation."],
+  ["APU fuel control valve", "valve", "49", "Meters fuel to the auxiliary combustion system."],
+  ["APU oil reservoir", "vessel", "49", "Stores lubricant for the auxiliary unit."],
+  ["APU oil cooler", "radiator", "49", "Rejects heat from the auxiliary lubrication circuit."],
+  ["APU intake door actuator", "actuator", "49", "Moves the auxiliary-unit air intake door."],
+  ["APU fire bottle", "vessel", "26", "Stores extinguishing agent for the auxiliary fire zone."],
+  ["APU exhaust temperature sensor", "sensor", "49", "Monitors auxiliary exhaust temperature."],
+  ["APU pneumatic shutoff valve", "valve", "49", "Controls the auxiliary compressed-air supply."],
+]);
+modules("deck-hardware", "Avionics", "cockpit-equipment", [15.1, .05, .6], [
+  ["Captain seat", "seat", "25", "Shows seat rails, cushions, armrests and restraint straps."],
+  ["First officer seat", "seat", "25", "Illustrates a second adjustable crew seat."],
+  ["Overhead switch panel", "console", "31", "Groups representative aircraft-system switches and indicators."],
+  ["Center pedestal control panel", "console", "31", "Groups representative center-console controls."],
+  ["Captain rudder pedals", "pedals", "27", "Provides a foot-operated directional-control interface."],
+  ["First officer rudder pedals", "pedals", "27", "Illustrates a second linked pedal interface."],
+  ["Audio control panel", "console", "23", "Selects communication and audio sources."],
+  ["Radio tuning panel", "console", "23", "Provides radio tuning and selection controls."],
+  ["Engine start control panel", "console", "80", "Illustrates the crew interface for engine starting."],
+  ["Cockpit wiring loom", "harness", "92", "Bundles electrical connections between flight-deck equipment."],
+  ["Flight-deck circuit breaker panel", "console", "24", "Illustrates manually accessible circuit protection."],
+  ["Standby compass sensor", "sensor", "34", "Represents a separate heading reference."],
+]);
+modules("tail-drive", "Flight controls", "tail-controls", [-13.6, .6, 0], [
+  ["Rudder servo actuator A", "actuator", "27", "Converts hydraulic pressure into rudder control motion."],
+  ["Rudder servo actuator B", "actuator", "27", "Illustrates a separate rudder actuation channel."],
+  ["Rudder servo actuator C", "actuator", "27", "Illustrates an additional rudder actuation channel."],
+  ["Rudder travel limiter", "gearbox", "27", "Illustrates a mechanism for limiting rudder travel."],
+  ["Port elevator actuator", "actuator", "27", "Drives an elevator control surface."],
+  ["Starboard elevator actuator", "actuator", "27", "Drives the opposite elevator control surface."],
+  ["Stabilizer trim screw drive", "actuator", "27", "Illustrates the linear drive used to set stabilizer incidence."],
+  ["Stabilizer trim gearbox", "gearbox", "27", "Transfers rotary drive into the stabilizer adjustment mechanism."],
+  ["Rudder position transmitter", "sensor", "27", "Reports rudder position to monitoring equipment."],
+  ["Elevator position transmitter", "sensor", "27", "Reports elevator position."],
+  ["Stabilizer position transmitter", "sensor", "27", "Reports stabilizer trim position."],
+  ["Tail control wiring harness", "harness", "92", "Connects tail-control sensors and electronics."],
+]);
+modules("cargo-protection", "Cabin systems", "cargo-equipment", [1, -1, .45], [
+  ["Forward cargo smoke detector", "sensor", "26", "Monitors a representative forward cargo zone for smoke."],
+  ["Aft cargo smoke detector", "sensor", "26", "Monitors a representative aft cargo zone for smoke."],
+  ["Cargo extinguishing bottle A", "vessel", "26", "Stores agent for cargo fire suppression."],
+  ["Cargo extinguishing bottle B", "vessel", "26", "Illustrates a second suppression-agent vessel."],
+  ["Cargo fire distribution valve", "valve", "26", "Illustrates routing of a suppression supply."],
+  ["Cargo ventilation isolation valve", "valve", "21", "Isolates a ventilation path."],
+  ["Cargo door hydraulic actuator", "actuator", "52", "Illustrates powered movement of a cargo door."],
+  ["Cargo door latch drive", "gearbox", "52", "Transmits motion to a door latching mechanism."],
+  ["Cargo door lock sensor", "sensor", "52", "Detects a representative locking target."],
+  ["Cargo service access panel", "hatch", "52", "Shows a hinged service panel and recessed handle."],
+  ["Cargo lighting unit", "electronics", "33", "Represents protected lighting equipment for the hold."],
+  ["Cargo detector wiring loom", "harness", "92", "Connects the cargo monitoring components."],
+]);
+modules("ground-services", "Air and environmental", "service-bay", [8.2, -1.35, 0], [
+  ["Ground pneumatic connector", "duct", "36", "Connects a representative external pneumatic supply."],
+  ["Ground air isolation valve", "valve", "36", "Isolates the ground-air connection."],
+  ["Preconditioned air coupling", "duct", "21", "Illustrates an external conditioned-air connection."],
+  ["Ground service access door", "hatch", "52", "Provides access to a service connection bay."],
+  ["Pneumatic pressure sensor", "sensor", "36", "Reports pressure in the service supply path."],
+  ["Service manifold", "duct", "36", "Illustrates an air distribution connection."],
+  ["Service bay drain valve", "valve", "21", "Illustrates drainage of collected moisture."],
+  ["Ground air check valve", "valve", "36", "Illustrates a one-way flow device."],
+]);
+for (const side of [-1, 1]) {
+  const suffix = side > 0 ? "port" : "starboard", label = side > 0 ? "Port" : "Starboard";
+  for (let station = 0; station < 8; station++) {
+    const x = .2 - station * .64, z = side * (3.1 + station * 1.5);
+    SUBSYSTEM_PARTS.push({ id: `wing-rib-${suffix}-${station + 1}`, name: `${label} wing rib ${station + 1}`,
+      system: "Primary structure", assemblyId: `wing-${suffix}`, ata: "57", geometry: "rib",
+      position: [x, -.10 + station * .05, z], offset: [0, 1.1 + station % 2 * .35, side * .65],
+      description: "A stiffened transverse rib illustrates transfer of local wing loads into the spar and skin. Geometry and station spacing are original educational artwork." });
+  }
+  modules(`wing-service-${suffix}`, "Primary structure", `wing-${suffix}`, [-2, .15, side * 8], [
+    [`${label} wing inspection panel`, "hatch", "57", "Illustrates removable access to internal wing equipment."],
+    [`${label} pylon attachment fitting`, "rib", "54", "Illustrates a stiffened attachment load path."],
+    [`${label} leading-edge support rib`, "rib", "57", "Supports a representative leading-edge structure."],
+    [`${label} trailing-edge support rib`, "rib", "57", "Supports a representative trailing-edge structure."],
+  ], side);
+  modules(`wing-electrics-${suffix}`, "Electrical power", "electrical", [3.1, -.5, side * 1.1], [
+    [`${label} wing wiring loom`, "harness", "92", "Illustrates bundled wiring for wing equipment."],
+    [`${label} navigation light driver`, "electronics", "33", "Supplies a representative external lighting load."],
+    [`${label} strobe power supply`, "electronics", "33", "Supplies energy to a representative flashing light."],
+    [`${label} wing junction box`, "electronics", "24", "Provides electrical distribution connections."],
+  ], side);
+  modules(`anti-ice-${suffix}`, "Air and environmental", "air", [-5, -.5, side * 1.35], [
+    [`${label} wing anti-ice valve`, "valve", "30", "Controls hot-air supply to an ice-protection path."],
+    [`${label} anti-ice supply duct`, "duct", "30", "Routes hot air through a representative ice-protection circuit."],
+    [`${label} duct overheat detector`, "sensor", "30", "Detects excessive temperature near an air duct."],
+    [`${label} anti-ice pressure switch`, "sensor", "30", "Monitors supply pressure for ice protection."],
+  ], side);
+}
+modules("radio-equipment", "Avionics", "avionics", [11.8, -.4, .95], [
+  ["VHF blade antenna", "antenna", "23", "Illustrates a streamlined radio antenna and mounting base."],
+  ["Navigation antenna", "antenna", "34", "Illustrates an external navigation receiving element."],
+  ["Transponder antenna", "antenna", "34", "Illustrates a radio interface for surveillance responses."],
+  ["Emergency locator transmitter", "electronics", "25", "Represents emergency location transmitting equipment."],
+  ["Traffic advisory processor", "electronics", "34", "Processes representative traffic surveillance inputs."],
+  ["Radio altimeter unit", "electronics", "34", "Processes a radio-based height measurement."],
+  ["Flight data recorder", "electronics", "31", "Illustrates a unit that records aircraft parameters."],
+  ["Cockpit voice recorder", "electronics", "23", "Illustrates a unit that records flight-deck audio."],
+]);
+
+// Crew interfaces follow the two-seat layout, rather than the bay module grid.
+const deckPositions: [number, number, number][] = [
+  [14.15, -.05, .63], [14.15, -.05, -.63], [14.55, 1.15, 0], [14.45, -.05, 0],
+  [15.15, -.3, .63], [15.15, -.3, -.63], [14.05, .2, .1], [14.05, .2, -.22],
+  [14.7, .2, 0], [13.8, -.3, 0], [13.55, .6, .8], [15.7, .72, 0],
+];
+deckPositions.forEach((position, index) => {
+  const definition = SUBSYSTEM_PARTS.find(item => item.id === `deck-hardware-${index + 1}`)!;
+  definition.position = position;
+  definition.offset = [(index % 3 - 1) * 1.1, .5 + Math.floor(index / 3) * .7, index % 2 ? -1.2 : 1.2];
+});
+for (let index = 0; index < 3; index++) {
+  const antenna = SUBSYSTEM_PARTS.find(item => item.id === `radio-equipment-${index + 1}`)!;
+  antenna.assemblyId = "external-antennas";
+  antenna.position = [8 - index * 5, 2.065, 0];
+  antenna.offset = [0, .5 + index * .4, index % 2 ? -.8 : .8];
+}
+
+SUBSYSTEM_PARTS.push(...ADDITIONAL_PARTS);
