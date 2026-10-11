@@ -277,7 +277,11 @@ export default function AircraftScene(props: Props) {
           point.copy(part.group.position).add(parent.group.position).toArray(guidePositions, index + 3);
         }
       });
-      guides.visible = isolated ? partAmount > .02 : amount > .02;
+      // Closing the aircraft hides cutaway-only equipment and tank volumes.
+      // Explicit subsystem inspection still exposes internals, even in assembled mode.
+      const exposeInterior = !!isolated || (targetExplosion() > .02 && amount > .02);
+      model.setInteriorVisible(exposeInterior, !isolated);
+      guides.visible = isolated ? partAmount > .02 : exposeInterior;
       guideMaterial.opacity = (isolated ? partAmount : amount) * .35;
       guideGeometry.attributes.position.needsUpdate = true;
       // Track the selected part's animated center without changing the user's
@@ -292,7 +296,7 @@ export default function AircraftScene(props: Props) {
       }
       controls.update(); model.root.updateMatrixWorld(true);
       const selectedPart = state.selectedPartId ? partMap.get(state.selectedPartId) : undefined;
-      selectionBox.visible = !!selectedPart && systemMatches(selectedPart.definition.system, isolated);
+      selectionBox.visible = !!selectedPart && selectedPart.group.visible && systemMatches(selectedPart.definition.system, isolated);
       if (selectionBox.visible && selectedPart) selectionBox.setFromObject(selectedPart.group);
       const placed: { x: number; y: number; w: number }[] = [];
       const orderedLabels = [...labelNodes].sort((a,b) => Number(b.part?.definition.id === state.selectedPartId) - Number(a.part?.definition.id === state.selectedPartId));

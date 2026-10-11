@@ -23,6 +23,7 @@ export function createDeltaA320() {
   root.name = "Planatomy original Delta-inspired A320";
   const assemblies: AircraftAssembly[] = [];
   const textures: THREE.Texture[] = [];
+  const internalContext: THREE.Object3D[] = [];
   const palette = {
     white: 0xf5f7fa, navy: 0x101e3d, red: 0xcb173b, silver: 0x93a4b5,
     wing: 0xd0d9e3, dark: 0x101a29, teal: 0x348c96, gold: 0xdca34d,
@@ -287,6 +288,7 @@ export function createDeltaA320() {
     const tankMat = material(palette.gold, .1); tankMat.transparent = true; tankMat.opacity = .72;
     const tank = panel(fuel, [[1,side*2.1],[-3.5,side*11.2],[-4.8,side*11.2],[-2.5,side*2.1]], .31, tankMat);
     tank.position.y = -.17;
+    internalContext.push(tank);
 
     const engineX = 2.9, engineY = -1.65, engineZ = side*5.4;
     const engine = assembly(`engine-${suffix}`, `${sideName} engine nacelle`, "Propulsion", [1.6,-3.6,side*4.9], [engineX,engineY,engineZ], side > 0);
@@ -401,5 +403,15 @@ export function createDeltaA320() {
     });
     geometries.forEach(geometry=>geometry.dispose()); materials.forEach(mat=>mat.dispose()); textures.forEach(texture=>texture.dispose());
   }
-  return { root, assemblies, parts, dispose };
+  // Bay equipment uses spaced educational layouts, so some detailed meshes are
+  // larger than the real skin cavity. Treat these as interior cutaway content:
+  // they are exposed for exploded studies, never drawn through the closed skin.
+  const exteriorPartAssemblies = new Set(["nose-gear", "main-gear-port", "main-gear-starboard", "external-antennas"]);
+  function setInteriorVisible(visible: boolean, showContext = true) {
+    for (const part of parts) {
+      part.group.visible = visible || exteriorPartAssemblies.has(part.definition.assemblyId);
+    }
+    internalContext.forEach(object => { object.visible = visible && showContext; });
+  }
+  return { root, assemblies, parts, setInteriorVisible, dispose };
 }

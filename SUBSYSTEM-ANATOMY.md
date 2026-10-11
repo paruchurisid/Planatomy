@@ -92,3 +92,5 @@ Revision 04 checks require all six new assemblies to contain selectable geometry
 Revision 05 verification checks each new assembly against its shared part list and exercises search/focus on one part from all eight new subsystems. It captures the ram-air turbine and slide container alongside existing overview, mobile and part screenshots.
 
 Search also matches the new subsystem display names (for example, “Door & evacuation equipment” returns all eight parts), and the inspector displays those names instead of raw assembly IDs.
+
+Closed-aircraft visibility: internal educational meshes and wing fuel volumes are concealed when assembly spread is zero (or the Assembled mode is selected). Landing gear and external antennas remain visible. Exploded views and explicit subsystem inspection restore internal content. This is a closed-skin/cutaway visibility rule, not a claim that the representative equipment layouts have engineering-accurate installation clearances.

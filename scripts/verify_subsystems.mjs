@@ -37,6 +37,17 @@ try {
       if (pane.geometry.attributes.position.count < 100) issues.push("Glazing is not fitted to nose curvature");
     }
     const systems = {};
+    model.setInteriorVisible(false);
+    for (const part of model.parts) {
+      const exterior = ["nose-gear", "main-gear-port", "main-gear-starboard", "external-antennas"].includes(part.definition.assemblyId);
+      if (part.group.visible !== exterior) issues.push("Incorrect closed-skin visibility: " + part.definition.id);
+    }
+    for (const id of ["fuel-port", "fuel-starboard"]) {
+      const tank = model.assemblies.find(assembly => assembly.id === id).group.children.find(child => child.isMesh);
+      if (tank.visible) issues.push("Tank protrudes through closed wing: " + id);
+    }
+    model.setInteriorVisible(true);
+    if (model.parts.some(part => !part.group.visible)) issues.push("Exploded view did not restore internal parts");
     for (const subsystem of ADDITIONAL_SUBSYSTEMS) {
       const children = model.parts.filter(part => part.definition.assemblyId === subsystem.id);
       if (children.length !== subsystem.items.length) issues.push("Incomplete subsystem: " + subsystem.id);
