@@ -4,6 +4,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { createDeltaA320, DELTA_MODEL_VERSION, type AircraftAssembly } from "./deltaA320";
 import type { AircraftPart } from "./subsystemGeometry";
 import type { ComponentOccurrence } from "./types";
+import type { AirlineVariant } from "./airlineVariants";
 import "./AircraftScene.css";
 
 type Props = {
@@ -19,6 +20,7 @@ type Props = {
   partExplosion?: number;
   isolatedSystem?: string | null;
   focusKey?: number;
+  airline?: AirlineVariant;
 };
 type Hit = { assembly: AircraftAssembly; part?: AircraftPart };
 type LabelNode = { assembly: AircraftAssembly; part?: AircraftPart; button: HTMLButtonElement; width: number };
@@ -71,7 +73,7 @@ export default function AircraftScene(props: Props) {
     const grid = new THREE.GridHelper(160, 80, 0x9aafc0, 0xb6c7d5); grid.position.y = -8.98;
     const gridMaterial = grid.material as THREE.Material; gridMaterial.transparent = true; gridMaterial.opacity = .18; scene.add(grid);
 
-    const model = createDeltaA320(); scene.add(model.root);
+    const model = createDeltaA320(props.airline ?? "delta"); scene.add(model.root);
     const assemblyMap = new Map(model.assemblies.map(item => [item.id, item]));
     const partMap = new Map(model.parts.map(part => [part.definition.id, part]));
     const partOffsets = new Map(model.parts.map(part => [part.definition.id, new THREE.Vector3(...part.definition.offset)]));
@@ -338,7 +340,7 @@ export default function AircraftScene(props: Props) {
       guideGeometry.dispose(); guideMaterial.dispose(); selectionBox.geometry.dispose(); selectionBox.material.dispose();
       key.shadow.dispose(); renderer.dispose(); canvas.remove();
     };
-  }, []);
+  }, [props.airline]);
 
   const visibleParts = props.isolatedSystem
     ? (counts.systems[props.isolatedSystem] ?? 0) + (props.isolatedSystem === "Landing gear" ? counts.systems["Main landing gear assembly"] ?? 0 : 0)
@@ -346,7 +348,7 @@ export default function AircraftScene(props: Props) {
   return <div className="aircraft-stage">
     <div className="scene-canvas" ref={mountRef} />
     <div className="assembly-labels" ref={labelRef} hidden={props.labels === false || (props.mode === "assembled" && !props.isolatedSystem)} />
-    <div className="model-caption"><span className="model-caption-rule" /><div><strong>{props.isolatedSystem ?? "DELTA / A320–200"}</strong><small>{props.isolatedSystem ? "ISOLATED SUBSYSTEM / ORIGINAL PARTS" : DELTA_MODEL_VERSION}</small></div></div>
+    <div className="model-caption"><span className="model-caption-rule" /><div><strong>{props.isolatedSystem ?? `${(props.airline ?? "delta").toUpperCase()} / A320–200`}</strong><small>{props.isolatedSystem ? "ISOLATED SUBSYSTEM / ORIGINAL PARTS" : DELTA_MODEL_VERSION}</small></div></div>
     <div className="model-scale"><strong>{props.isolatedSystem ? visibleParts : counts.assemblies || "—"}</strong><span>{props.isolatedSystem ? <>illustrated<br />parts</> : <>separable<br />assemblies</>}</span></div>
     {!props.isolatedSystem && <div className="model-part-count">{counts.parts} subsystem parts · Select a system to explore</div>}
     {hover && !failure && <div className="model-hover"><strong>{hover.label}</strong><span>{hover.system} · {hover.part ? "Inspect part" : "Inspect assembly"}</span></div>}

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { buildSubsystemParts } from "./subsystemGeometry";
 import { ADDITIONAL_SUBSYSTEMS } from "./subsystemExpansion";
+import { getLivery, type AirlineVariant } from "./airlineVariants";
 
 export type AircraftAssembly = {
   id: string;
@@ -18,15 +19,16 @@ export const DELTA_MODEL_VERSION = "Original study / 05 · utility & safety syst
 
 // Original, illustrative geometry. +X is the nose, +Y up, +Z the port wing.
 // Dimensions describe the classic wingtip-fence A320 envelope, not a serialised airframe.
-export function createDeltaA320() {
+export function createDeltaA320(airline: AirlineVariant = "delta") {
+  const livery = getLivery(airline);
   const root = new THREE.Group();
-  root.name = "Planatomy original Delta-inspired A320";
+  root.name = `Planatomy original ${livery.name} A320 study`;
   const assemblies: AircraftAssembly[] = [];
   const textures: THREE.Texture[] = [];
   const internalContext: THREE.Object3D[] = [];
   const palette = {
-    white: 0xf5f7fa, navy: 0x101e3d, red: 0xcb173b, silver: 0x93a4b5,
-    wing: 0xd0d9e3, dark: 0x101a29, teal: 0x348c96, gold: 0xdca34d,
+    white: livery.white, navy: livery.navy, red: livery.red, silver: livery.silver,
+    wing: 0xd0d9e3, dark: 0x101a29, teal: livery.accent, gold: 0xdca34d,
   };
   function material(color: number, metalness = 0.15, roughness = 0.43) {
     return new THREE.MeshStandardMaterial({ color, metalness, roughness, side: THREE.DoubleSide });
@@ -70,19 +72,43 @@ export function createDeltaA320() {
     const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = 4; textures.push(texture); return texture;
   }
-  const wordmark = canvasMap(ctx => {
-    ctx.clearRect(0, 0, 1024, 256); ctx.fillStyle = "#bf1636";
+  const fallbackWordmark = canvasMap(ctx => {
+    ctx.clearRect(0, 0, 1024, 256); ctx.fillStyle = `#${livery.red.toString(16).padStart(6, "0")}`;
     ctx.beginPath(); ctx.moveTo(84, 49); ctx.lineTo(25, 174); ctx.lineTo(81, 139); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "#e32246"; ctx.beginPath(); ctx.moveTo(88, 49); ctx.lineTo(146, 174); ctx.lineTo(91, 139); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "#102344"; ctx.font = "600 124px Arial, sans-serif";
-    "DELTA".split("").forEach((letter, i) => ctx.fillText(letter, 187 + i * 155, 174));
+    ctx.fillStyle = `#${livery.accent.toString(16).padStart(6, "0")}`; ctx.beginPath(); ctx.moveTo(88, 49); ctx.lineTo(146, 174); ctx.lineTo(91, 139); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = `#${livery.navy.toString(16).padStart(6, "0")}`;
+    const fontSize = livery.wordmark.length > 8 ? 86 : livery.wordmark.length > 6 ? 105 : 124;
+    ctx.font = `600 ${fontSize}px Arial, sans-serif`;
+    ctx.fillText(livery.wordmark, 170, 174);
   });
   const tailmark = canvasMap(ctx => {
-    ctx.fillStyle = "#d61239"; ctx.beginPath(); ctx.moveTo(650, 60); ctx.lineTo(150, 775);
-    ctx.lineTo(610, 613); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "#a7082f"; ctx.beginPath(); ctx.moveTo(670, 60); ctx.lineTo(875, 828);
-    ctx.lineTo(642, 617); ctx.closePath(); ctx.fill();
+    const red = `#${livery.red.toString(16).padStart(6, "0")}`, accent = `#${livery.accent.toString(16).padStart(6, "0")}`;
+    if (livery.tailStyle === "delta") {
+      ctx.fillStyle = red; ctx.beginPath(); ctx.moveTo(650, 60); ctx.lineTo(150, 775); ctx.lineTo(610, 613); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = accent; ctx.beginPath(); ctx.moveTo(670, 60); ctx.lineTo(875, 828); ctx.lineTo(642, 617); ctx.closePath(); ctx.fill();
+    } else if (livery.tailStyle === "stripes") {
+      for (let i = 0; i < 7; i++) { ctx.fillStyle = i % 2 ? accent : red; ctx.beginPath(); ctx.moveTo(95 + i * 95, 80); ctx.lineTo(450 + i * 55, 890); ctx.lineTo(555 + i * 42, 850); ctx.lineTo(205 + i * 95, 65); ctx.closePath(); ctx.fill(); }
+    } else if (livery.tailStyle === "globe") {
+      ctx.fillStyle = `#${livery.navy.toString(16).padStart(6, "0")}`; ctx.beginPath(); ctx.arc(520, 500, 330, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = accent; ctx.lineWidth = 34; for (const scale of [0.45, 0.72, 1]) { ctx.beginPath(); ctx.ellipse(520, 500, 330 * scale, 330, 0, 0, Math.PI * 2); ctx.stroke(); }
+      ctx.strokeStyle = red; ctx.lineWidth = 24; ctx.beginPath(); ctx.arc(520, 500, 330, -.3, 1.3); ctx.stroke();
+    } else if (livery.tailStyle === "bands") {
+      ctx.fillStyle = red; ctx.beginPath(); ctx.moveTo(110, 90); ctx.lineTo(830, 820); ctx.lineTo(760, 900); ctx.lineTo(45, 180); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = accent; ctx.beginPath(); ctx.moveTo(260, 45); ctx.lineTo(920, 670); ctx.lineTo(860, 750); ctx.lineTo(190, 120); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = `#${livery.navy.toString(16).padStart(6, "0")}`; ctx.beginPath(); ctx.moveTo(430, 30); ctx.lineTo(950, 470); ctx.lineTo(900, 560); ctx.lineTo(365, 80); ctx.closePath(); ctx.fill();
+    } else {
+      ctx.fillStyle = `#${livery.navy.toString(16).padStart(6, "0")}`; ctx.beginPath(); ctx.arc(530, 500, 350, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = accent; ctx.beginPath(); ctx.arc(430, 400, 230, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = red; ctx.beginPath(); ctx.arc(590, 580, 210, 0, Math.PI * 2); ctx.fill();
+    }
   }, 1024, 1024);
+  // Uploaded airline marks are preferred when present; the small procedural
+  // marks above remain a deterministic fallback while a local PNG is loading.
+  const uploadedLogo = new THREE.TextureLoader().load(livery.logoAsset);
+  uploadedLogo.colorSpace = THREE.SRGBColorSpace;
+  uploadedLogo.anisotropy = 4;
+  textures.push(uploadedLogo);
+  const wordmark = uploadedLogo ?? fallbackWordmark;
   function decal(parent: THREE.Object3D, map: THREE.Texture, size: number[], position: number[], side = 1) {
     const mat = material(palette.white, 0, 0.7); mat.map = map; mat.transparent = true;
     mat.depthWrite = false; mat.polygonOffset = true; mat.polygonOffsetFactor = -2;
@@ -135,7 +161,8 @@ export function createDeltaA320() {
       box(door, [0.19, 0.05, 0.025], [0.2, -0.12, side * 0.032], material(palette.silver));
     }
     // Text planes sit tangential to the upper fuselage; opposite sides read normally.
-    const mark = decal(upper, wordmark, [5.9, 1.475], [7.2, 1.22, side * 1.62], side);
+    const sideSize: Record<AirlineVariant, [number, number]> = { delta: [5.9, 1.475], american: [5.5, 1.55], united: [3.5, 1.55], alaska: [2.25, 1.7] };
+    const mark = decal(upper, wordmark, sideSize[airline], [7.2, 1.22, side * 1.62], side);
     mark.rotation.x = side * -0.63;
     for (const x of [0.9, -0.5]) {
       const exit = box(upper, [0.50, 0.8, 0.026], [x, 0.57, side * 1.90], material(0xdbe1e7));
@@ -320,7 +347,8 @@ export function createDeltaA320() {
   const fin=panel(tail,[[-12.2,1.4],[-15.4,7.9],[-17.7,7.9],[-17.0,1.2]],.20,material(palette.navy),"z"); fin.position.z=-.10;
   [-1,1].forEach(side=> {
     // Hand-drawn triangular tail motif, on both faces of the original mesh.
-    decal(tail,tailmark,[3.55,5.5],[-15.85,4.65,side*.115],side);
+    const tailSize: Record<AirlineVariant, [number, number]> = { delta: [2.35, 2.35], american: [2.1, 1.7], united: [1.9, 1.9], alaska: [2.45, 2.45] };
+    decal(tail, wordmark, tailSize[airline], [-15.85, 4.65, side * .115], side);
     const stabilizer=panel(tail,[[-12.1,side*.7],[-16.7,side*6.22],[-18.1,side*6.22],[-16.25,side*.7]],.14,material(palette.wing));
     stabilizer.position.y=1.24;
   });

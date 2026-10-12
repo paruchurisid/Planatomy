@@ -65,6 +65,12 @@ a{color:#8ec6ff;text-underline-offset:3px}
 .toolbar-actions button{border:0;border-radius:3px;background:transparent;color:#566e87;padding:7px 10px;font:10px var(--mono)}
 .toolbar-actions button:hover{background:#edf2f6}
 .toolbar-actions button.selected{background:#17304c;color:#fff;box-shadow:0 2px 4px #1b304c25}
+.livery-toolbar{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:7px 19px;border-bottom:1px solid #bbc9d880;background:#dce5ed}
+.livery-label{color:#637b92;font:8px var(--mono);letter-spacing:.08em;margin-right:4px}
+.livery-toolbar button{display:flex;align-items:center;gap:5px;border:1px solid #bdcad6;border-radius:4px;background:#e9eff4;color:#405b74;padding:5px 7px;font:9px var(--mono)}
+.livery-toolbar button:hover{background:#fff}
+.livery-toolbar button.selected{background:#17304c;color:#fff;border-color:#17304c}
+.livery-swatch{display:inline-block;width:13px;height:8px;border-radius:2px;border:1px solid #ffffff88}
 .scene-wrap{position:relative;flex:1;min-height:360px;isolation:isolate}
 .scene-canvas{width:100%;height:100%;min-height:360px}
 .scene-canvas canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}

@@ -11,7 +11,7 @@ The project takes its interaction inspiration from [Human Atlas](https://github.
 - Documentation baseline: September 14, 2026.
 - User-confirmed initial market: commercial passenger jets.
 - Working product name: Planatomy.
-- Current visual aircraft: an original Delta-inspired Airbus A320-200 study with 27 separable assemblies and 79 selectable subsystem parts, plus a generic A320ceo component catalog.
+- Current visual aircraft: an original Airbus A320-200 study with 27 separable assemblies and 79 selectable subsystem parts, plus four selectable uploaded airline liveries (Delta, American, United, and Alaska). The generic A320ceo component catalog remains separate from paint selection.
 - Current implementation: React/Three.js viewer, FastAPI, PostgreSQL schema, and seeded system descriptions. Part-number coverage and verified price evidence remain incomplete.
 - All numerical launch targets, schedules, operating budgets, and fictional price examples are planning assumptions unless explicitly identified otherwise.
 
@@ -73,7 +73,7 @@ The confirmed passenger-jet scope takes precedence over planning defaults. The o
 
 ### Interactive aircraft (no database required)
 
-Run `npm install`, then `npm run dev` from the repository root and open `http://127.0.0.1:5173/`. The original Delta-inspired model opens exploded, with orbit/zoom, selectable assemblies, labels, and a separation slider. The local illustration catalog works without the API; compatible A320 catalog data is used when available. See [Original A320 model](ORIGINAL-A320-MODEL.md) for artwork, scope, and browser checks.
+Run `npm install`, then `npm run dev` from the repository root and open `http://127.0.0.1:5173/`. The original A320 study opens exploded, with orbit/zoom, selectable assemblies, labels, a separation slider, and an airline livery selector. The local illustration catalog works without the API; compatible A320 catalog data is used when available. See [Original A320 model](ORIGINAL-A320-MODEL.md) for artwork, scope, and browser checks.
 
 Open a system's `+` control or search for a component to inspect the [subsystem anatomy](SUBSYSTEM-ANATOMY.md). Part selection isolates the system; Subsystem spread separates its internal components. Show aircraft returns to the full model.
 

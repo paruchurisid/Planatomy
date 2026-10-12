@@ -3,6 +3,7 @@ import type { ComponentOccurrence, Configuration } from "./types";
 import AircraftScene from "./AircraftScene";
 import { COMPONENT_GUIDE, LOCAL_COMPONENTS } from "./aircraftCatalog";
 import { SUBSYSTEM_PARTS, type SubsystemPartDefinition } from "./subsystemParts";
+import { AIRLINE_LIVERIES, DEFAULT_AIRLINE, type AirlineVariant } from "./airlineVariants";
 
 const API = (import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000").replace(/\/$/, "");
 type CatalogStatus = "connecting" | "live" | "local";
@@ -30,6 +31,8 @@ export default function App() {
   const [catalogMessage, setCatalogMessage] = useState("Checking for a connected A320 catalog.");
   const [retryKey, setRetryKey] = useState(0);
   const [showMethodology, setShowMethodology] = useState(false);
+  const [airline, setAirline] = useState<AirlineVariant>(DEFAULT_AIRLINE);
+  const activeLivery = AIRLINE_LIVERIES.find(item => item.id === airline) ?? AIRLINE_LIVERIES[0];
   const mode = explosion > 0 ? "exploded" : "assembled";
 
   useEffect(() => {
@@ -127,7 +130,7 @@ export default function App() {
     <section className="workspace">
       <aside className="sidebar left-panel">
         <div className="eyebrow">AIRFRAME STUDY / 001</div>
-        <h1>Airbus A320<span className="aircraft-subtitle">Delta-inspired · A320-200</span></h1>
+        <h1>Airbus A320<span className="aircraft-subtitle">{activeLivery.name} · A320-200</span></h1>
         <p className="muted">An original 3D illustration.<br />Open the aircraft. Explore what is inside.</p>
         <div className="reference-chip"><span className="chip-dot" /> ORIGINAL MODEL <span className="reference-code">A320</span></div>
         <div className="panel-divider" />
@@ -160,12 +163,13 @@ export default function App() {
           <div className="toolbar-pill"><span className="toolbar-dot" />{mode === "assembled" ? "ASSEMBLED" : "EXPLODED"}<span className="toolbar-subtitle"> / A320-200</span></div>
           <div className="toolbar-actions" aria-label="Aircraft view"><button onClick={() => setExplosion(0)} className={mode === "assembled" ? "selected" : ""} aria-pressed={mode === "assembled"}>Assembled</button><button onClick={() => setExplosion(0.78)} className={mode === "exploded" ? "selected" : ""} aria-pressed={mode === "exploded"}>Exploded</button></div>
         </div>
+        <div className="livery-toolbar" aria-label="Airline livery"><span className="livery-label">AIRLINE LIVERY</span>{AIRLINE_LIVERIES.map(item => <button key={item.id} className={item.id === airline ? "selected" : ""} onClick={() => { setAirline(item.id); setIsIsolated(false); setSelectedPartId(null); setResetKey(value => value + 1); }} aria-pressed={item.id === airline}><span className="livery-swatch" style={{ background: `#${item.navy.toString(16).padStart(6, "0")}`, boxShadow: `inset 4px 0 #${item.red.toString(16).padStart(6, "0")}` }} />{item.shortName}</button>)}</div>
         <div className="inspection-toolbar">
           <div className="inspection-context"><span className="context-label">{isIsolated ? "SYSTEM STUDY" : "AIRCRAFT OVERVIEW"}</span><strong>{isIsolated ? selectedName : `${SUBSYSTEM_PARTS.length} parts to discover`}</strong>{isIsolated && selectedPart && <span className="context-part">/ {selectedPart.name}</span>}</div>
           <button className={`context-button ${isIsolated ? "enabled" : ""}`} disabled={!selected} onClick={() => setIsIsolated((value) => !value)} aria-pressed={isIsolated}>{isIsolated ? "Show aircraft" : "Isolate system"}</button>
           <button className="context-button" disabled={!selected} onClick={() => { setIsIsolated(true); setFocusKey((value) => value + 1); }}>Focus selection</button>
         </div>
-        <div className="scene-wrap"><AircraftScene selected={selected} selectedPartId={selectedPartId} mode={mode} explosion={explosion} partExplosion={isIsolated ? partExplosion : 0} isolatedSystem={isIsolated ? selectedName : null} focusKey={focusKey} labels={labels} resetKey={resetKey} onSelect={(id) => selectSystem(components.find((component) => component.id === id)?.canonical_name ?? null)} onSelectPart={(id) => { const part = SUBSYSTEM_PARTS.find((item) => item.id === id); if (part) selectPart(part); }} components={components} /></div>
+        <div className="scene-wrap"><AircraftScene airline={airline} selected={selected} selectedPartId={selectedPartId} mode={mode} explosion={explosion} partExplosion={isIsolated ? partExplosion : 0} isolatedSystem={isIsolated ? selectedName : null} focusKey={focusKey} labels={labels} resetKey={resetKey} onSelect={(id) => selectSystem(components.find((component) => component.id === id)?.canonical_name ?? null)} onSelectPart={(id) => { const part = SUBSYSTEM_PARTS.find((item) => item.id === id); if (part) selectPart(part); }} components={components} /></div>
         <div className="viewer-controls">
           <div className="separation-controls">
             <label className="explosion-control" htmlFor="explosion"><span>ASSEMBLY SPREAD</span><input id="explosion" type="range" min="0" max="100" step="1" value={Math.round(explosion * 100)} onChange={(event) => setExplosion(Number(event.target.value) / 100)} aria-valuetext={`${Math.round(explosion * 100)} percent separated`} /><output htmlFor="explosion">{Math.round(explosion * 100)}%</output></label>
@@ -179,8 +183,8 @@ export default function App() {
         <div className="coverage-banner"><span className="small-triangle" aria-hidden="true">△</span><span>Original geometry & livery art. {SUBSYSTEM_PARTS.length} illustrative parts; layouts and sizes are simplified.</span><button onClick={() => setShowMethodology((value) => !value)} aria-expanded={showMethodology}>Model notes ↗</button></div>
         {showMethodology && <div className="methodology-panel">
           <div className="section-heading"><span>ABOUT THIS ILLUSTRATION</span><button className="close-button" aria-label="Close model notes" onClick={() => setShowMethodology(false)}>×</button></div>
-          <p>This aircraft and its Delta-inspired livery are drawn in code for Planatomy. No downloaded aircraft mesh is used. It is an educational A320-200 study with simplified parts, an illustrative cabin and representative system locations.</p>
-          <p>The exploded arrangement explains assembly relationships. It is not engineering CAD, a maintenance manual, an exact Delta aircraft configuration or a complete parts inventory. Delta and Airbus do not endorse this project.</p>
+          <p>This aircraft and its selectable airline liveries are drawn in code for Planatomy. No downloaded aircraft mesh is used. It is an educational A320-200 study with simplified parts, an illustrative cabin and representative system locations.</p>
+          <p>The exploded arrangement explains assembly relationships. It is not engineering CAD, a maintenance manual, an exact airline configuration or a complete parts inventory. The airlines and Airbus do not endorse this project.</p>
           <p>Reference context: <a href="https://www.delta.com/us/en/aircraft/airbus/a320" target="_blank" rel="noreferrer">Delta A320</a> · <a href="https://www.airbus.com/en/products-services/commercial-aircraft/passenger-aircraft/a320-family" target="_blank" rel="noreferrer">Airbus A320 family</a>. Geometry and dimensions are approximate.</p>
         </div>}
       </section>
